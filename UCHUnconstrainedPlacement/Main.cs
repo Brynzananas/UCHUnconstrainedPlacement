@@ -19,7 +19,7 @@ namespace UncontrainedPlacement
     {
         public const string ModGuid = "com.brynzananas.uncontrainedplacement";
         public const string ModName = "Uncontrained Placement";
-        public const string ModVer = "1.1.0";
+        public const string ModVer = "1.2.0";
         private Harmony harmonyPatcher;
         public void Awake()
         {
@@ -96,6 +96,26 @@ namespace UncontrainedPlacement
     [HarmonyPatch]
     class Patches
     {
+        [HarmonyPatch(typeof(QuickSaver), nameof(QuickSaver.RestoreSaveables))]
+        [HarmonyILManipulator]
+        private static void QuickSaver_RestoreSaveables(ILContext il)
+        {
+            ILCursor iLCursor = new ILCursor(il);
+            while (iLCursor.TryGotoNext(MoveType.Before,
+                x => x.MatchLdloca(out _),
+                x => x.MatchLdloc(out _),
+                x => x.MatchLdfld<Vector3>(nameof(Vector3.z)),
+                x => x.MatchLdcR4(90f),
+                x => x.MatchDiv(),
+                x => x.MatchCall<Mathf>(nameof(Mathf.Round)),
+                x => x.MatchLdcR4(90f),
+                x => x.MatchMul(),
+                x => x.MatchStfld<Vector3>(nameof(Vector3.z))
+                ))
+            {
+                iLCursor.RemoveRange(9);
+            }
+        }
         [HarmonyPatch(typeof(PiecePlacementCursor), nameof(PiecePlacementCursor.FixedUpdate))]
         [HarmonyILManipulator]
         private static void PiecePlacementCursor_FixedUpdate(ILContext il)
